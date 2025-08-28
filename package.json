@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "json-server": "json-server --watch db.json --port 4000",
+    "dev": "concurrently \"npm run json-server\" \"next dev --turbopack",
     "build": "next build --turbopack",
-    "start": "next start",
+    "start": "concurrently \"npm run json-server\" \"next start",
     "lint": "eslint"
   },
   "dependencies": {
@@ -25,8 +26,10 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
+    "json-server": "^1.0.0-beta.3",
     "typescript": "^5"
   }
 }
