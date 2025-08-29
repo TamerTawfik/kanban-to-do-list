@@ -15,9 +15,23 @@ import {
   DialogContentText,
 } from "@mui/material";
 import { ErrorBoundary } from "react-error-boundary";
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragOverEvent,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import SearchBar from "./SearchBar";
 import KanbanColumn from "./KanbanColumn";
 import TaskForm from "./TaskForm";
+import TaskCard from "./TaskCard";
 import {
   useTasks,
   useDeleteTask,
@@ -31,6 +45,10 @@ import {
   useSelectedTask,
   useInitialColumn,
   useCloseTaskForm,
+  useSetDraggedTask,
+  useSetIsDragging,
+  useSetDragOverColumn,
+  useDraggedTask,
 } from "@/stores/kanbanStore";
 import { ColumnType, TaskMutation, Task } from "@/types/task.types";
 import { useState } from "react";
@@ -70,10 +88,28 @@ export default function KanbanBoard() {
   const initialColumn = useInitialColumn();
   const closeTaskForm = useCloseTaskForm();
 
+  // Drag and drop state
+  const setDraggedTask = useSetDraggedTask();
+  const setIsDragging = useSetIsDragging();
+  const setDragOverColumn = useSetDragOverColumn();
+  const draggedTask = useDraggedTask();
+
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+
+  // Configure drag sensors for mouse and keyboard interactions
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Minimum distance to start dragging
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const {
     data: tasks = [],
@@ -150,6 +186,108 @@ export default function KanbanBoard() {
     setErrorMessage("");
   };
 
+  // Drag and drop event handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const task = active.data.current?.task as Task;
+
+    if (task) {
+      setDraggedTask(task);
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over } = event;
+
+    if (over) {
+      const columnId = over.data.current?.columnId as ColumnType;
+      if (columnId) {
+        setDragOverColumn(columnId);
+      }
+    } else {
+      setDragOverColumn(null);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    // Reset drag state
+    setDraggedTask(null);
+    setIsDragging(false);
+    setDragOverColumn(null);
+
+    // If no valid drop target, show feedback
+    if (!over) {
+      setErrorMessage("Drop cancelled - task returned to original position");
+      return;
+    }
+
+    const task = active.data.current?.task as Task;
+    const targetColumnId = over.data.current?.columnId as ColumnType;
+
+    // Validate the drop operation
+    if (!task) {
+      setErrorMessage("Invalid task - drop operation failed");
+      return;
+    }
+
+    if (!targetColumnId) {
+      setErrorMessage(
+        "Invalid drop target - task returned to original position"
+      );
+      return;
+    }
+
+    // If task is dropped in the same column, no action needed
+    if (task.column === targetColumnId) {
+      return;
+    }
+
+    // Update task column with optimistic update and comprehensive error handling
+    updateTaskMutation.mutate(
+      {
+        id: task.id,
+        updates: {
+          column: targetColumnId,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+      {
+        onSuccess: () => {
+          const columnNames: Record<ColumnType, string> = {
+            backlog: "Backlog",
+            "in-progress": "In Progress",
+            review: "Review",
+            done: "Done",
+          };
+          setSuccessMessage(
+            `Task "${task.title}" moved to ${columnNames[targetColumnId]}`
+          );
+        },
+        onError: (error) => {
+          // Provide specific error messages based on error type
+          let errorMsg = "Failed to move task";
+
+          if (error.message.includes("network")) {
+            errorMsg =
+              "Network error - task move failed. Please check your connection.";
+          } else if (error.message.includes("404")) {
+            errorMsg =
+              "Task not found - it may have been deleted by another user.";
+          } else if (error.message.includes("400")) {
+            errorMsg = "Invalid task data - move operation failed.";
+          } else if (error.message) {
+            errorMsg = error.message;
+          }
+
+          setErrorMessage(errorMsg);
+        },
+      }
+    );
+  };
+
   const isFormLoading =
     createTaskMutation.isPending || updateTaskMutation.isPending;
   const formError =
@@ -177,102 +315,133 @@ export default function KanbanBoard() {
       FallbackComponent={ErrorFallback}
       onReset={() => window.location.reload()}
     >
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        {/* Header with search */}
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h3"
-            component="h1"
-            gutterBottom
-            sx={{
-              fontWeight: 600,
-              color: "primary.main",
-              textAlign: "center",
-              mb: 3,
-            }}
-          >
-            Kanban Board
-          </Typography>
-
-          <Box sx={{ maxWidth: 600, mx: "auto" }}>
-            <SearchBar placeholder="Search tasks by title or description..." />
-          </Box>
-        </Box>
-
-        {/* Loading state */}
-        {isLoading && (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              minHeight: 400,
-            }}
-          >
-            <CircularProgress size={60} />
-          </Box>
-        )}
-
-        {/* Kanban columns */}
-        {!isLoading && (
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, 1fr)",
-                lg: "repeat(4, 1fr)",
-              },
-              gap: 3,
-            }}
-          >
-            {COLUMNS.map((column) => (
-              <KanbanColumn
-                key={column.id}
-                columnId={column.id}
-                title={column.title}
-                tasks={tasks.filter((task) => task.column === column.id)}
-                onTaskDelete={handleDeleteTask}
-              />
-            ))}
-          </Box>
-        )}
-
-        {/* Empty state when no tasks and not loading */}
-        {!isLoading && tasks.length === 0 && !searchQuery && (
-          <Box
-            sx={{
-              textAlign: "center",
-              py: 8,
-              color: "text.secondary",
-            }}
-          >
-            <Typography variant="h5" gutterBottom>
-              No tasks yet
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <Container maxWidth="xl" sx={{ py: 4 }}>
+          {/* Header with search */}
+          <Box sx={{ mb: 4 }}>
+            <Typography
+              variant="h3"
+              component="h1"
+              gutterBottom
+              sx={{
+                fontWeight: 600,
+                color: "primary.main",
+                textAlign: "center",
+                mb: 3,
+              }}
+            >
+              Kanban Board
             </Typography>
-            <Typography variant="body1">
-              Create your first task to get started with your Kanban board
-            </Typography>
-          </Box>
-        )}
 
-        {/* No search results */}
-        {!isLoading && tasks.length === 0 && searchQuery && (
-          <Box
-            sx={{
-              textAlign: "center",
-              py: 8,
-              color: "text.secondary",
-            }}
-          >
-            <Typography variant="h5" gutterBottom>
-              No tasks found
-            </Typography>
-            <Typography variant="body1">
-              Try adjusting your search terms or create a new task
-            </Typography>
+            <Box sx={{ maxWidth: 600, mx: "auto" }}>
+              <SearchBar placeholder="Search tasks by title or description..." />
+            </Box>
           </Box>
-        )}
+
+          {/* Loading state */}
+          {isLoading && (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                minHeight: 400,
+              }}
+            >
+              <CircularProgress size={60} />
+            </Box>
+          )}
+
+          {/* Kanban columns */}
+          {!isLoading && (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, 1fr)",
+                  lg: "repeat(4, 1fr)",
+                },
+                gap: 3,
+              }}
+            >
+              {COLUMNS.map((column) => (
+                <KanbanColumn
+                  key={column.id}
+                  columnId={column.id}
+                  title={column.title}
+                  tasks={tasks.filter((task) => task.column === column.id)}
+                  onTaskDelete={handleDeleteTask}
+                />
+              ))}
+            </Box>
+          )}
+
+          {/* Empty state when no tasks and not loading */}
+          {!isLoading && tasks.length === 0 && !searchQuery && (
+            <Box
+              sx={{
+                textAlign: "center",
+                py: 8,
+                color: "text.secondary",
+              }}
+            >
+              <Typography variant="h5" gutterBottom>
+                No tasks yet
+              </Typography>
+              <Typography variant="body1">
+                Create your first task to get started with your Kanban board
+              </Typography>
+            </Box>
+          )}
+
+          {/* No search results */}
+          {!isLoading && tasks.length === 0 && searchQuery && (
+            <Box
+              sx={{
+                textAlign: "center",
+                py: 8,
+                color: "text.secondary",
+              }}
+            >
+              <Typography variant="h5" gutterBottom>
+                No tasks found
+              </Typography>
+              <Typography variant="body1">
+                Try adjusting your search terms or create a new task
+              </Typography>
+            </Box>
+          )}
+        </Container>
+
+        {/* Drag Overlay for visual feedback during drag operations */}
+        <DragOverlay
+          dropAnimation={{
+            duration: 300,
+            easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+          }}
+        >
+          {draggedTask ? (
+            <Box
+              sx={{
+                transform: "rotate(5deg) scale(1.05)",
+                opacity: 0.9,
+                cursor: "grabbing",
+                filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.3))",
+                transition: "all 0.2s ease-in-out",
+                zIndex: 1000,
+              }}
+            >
+              <TaskCard task={draggedTask} isDragging />
+            </Box>
+          ) : null}
+        </DragOverlay>
 
         {/* Task Form Dialog */}
         <TaskForm
@@ -341,7 +510,7 @@ export default function KanbanBoard() {
             {errorMessage}
           </Alert>
         </Snackbar>
-      </Container>
+      </DndContext>
     </ErrorBoundary>
   );
 }

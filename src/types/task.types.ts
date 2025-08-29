@@ -16,6 +16,8 @@ export interface TaskMutation {
     title: string;
     description: string;
     column: ColumnType;
+    createdAt?: string;
+    updatedAt?: string;
     priority?: "low" | "medium" | "high";
     tags?: string[];
 }

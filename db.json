@@ -6,7 +6,7 @@
       "description": "Create a modern homepage design with hero section, navigation, and footer. Include responsive design for mobile and desktop.",
       "column": "backlog",
       "createdAt": "2024-01-15T10:00:00Z",
-      "updatedAt": "2024-01-15T10:00:00Z"
+      "updatedAt": "2025-08-29T04:13:47.498Z"
     },
     {
       "id": "2",
@@ -20,9 +20,9 @@
       "id": "3",
       "title": "Write API documentation",
       "description": "Document all REST API endpoints with examples and response formats.",
-      "column": "review",
+      "column": "backlog",
       "createdAt": "2024-01-13T16:45:00Z",
-      "updatedAt": "2024-01-17T11:15:00Z"
+      "updatedAt": "2025-08-29T04:17:59.022Z"
     },
     {
       "id": "4",
@@ -30,15 +30,15 @@
       "description": "Set up CI/CD pipeline and deploy the application to production environment.",
       "column": "done",
       "createdAt": "2024-01-12T08:00:00Z",
-      "updatedAt": "2024-01-18T17:30:00Z"
+      "updatedAt": "2025-08-29T04:16:43.453Z"
     },
     {
       "id": "5",
       "title": "Fix responsive layout issues",
       "description": "Address mobile layout problems on task cards and navigation menu.",
-      "column": "backlog",
+      "column": "done",
       "createdAt": "2024-01-16T13:20:00Z",
-      "updatedAt": "2024-01-16T13:20:00Z"
+      "updatedAt": "2025-08-29T04:17:52.150Z"
     }
   ]
 }
