@@ -10,7 +10,7 @@ import {
 import { ErrorBoundary } from "react-error-boundary";
 import SearchBar from "./SearchBar";
 import KanbanColumn from "./KanbanColumn";
-import { useTasks } from "@/hooks/useTasks";
+import { useTasks, useDeleteTask } from "@/hooks/useTasks";
 import { useSearchQuery } from "@/stores/kanbanStore";
 import { ColumnType } from "@/types/task.types";
 
@@ -51,6 +51,14 @@ export default function KanbanBoard() {
   } = useTasks({
     search: searchQuery || undefined,
   });
+
+  const deleteTaskMutation = useDeleteTask();
+
+  const handleDeleteTask = (taskId: number) => {
+    if (window.confirm("Are you sure you want to delete this task?")) {
+      deleteTaskMutation.mutate(taskId);
+    }
+  };
 
   if (isError) {
     return (
@@ -127,6 +135,7 @@ export default function KanbanBoard() {
                 columnId={column.id}
                 title={column.title}
                 tasks={tasks.filter((task) => task.column === column.id)}
+                onTaskDelete={handleDeleteTask}
               />
             ))}
           </Box>

@@ -6,12 +6,14 @@ import { Assignment } from "@mui/icons-material";
 import { useDroppable } from "@dnd-kit/core";
 import { useDragOverColumn, useSetDragOverColumn } from "@/stores/kanbanStore";
 import { Task, ColumnType } from "@/types/task.types";
+import TaskCard from "./TaskCard";
 
 interface KanbanColumnProps {
   columnId: ColumnType;
   title: string;
   tasks: Task[];
   onTaskDrop?: (taskId: number, newColumn: ColumnType) => void;
+  onTaskDelete?: (taskId: number) => void;
 }
 
 // Column color mapping for visual distinction
@@ -27,6 +29,7 @@ export default function KanbanColumn({
   title,
   tasks,
   onTaskDrop,
+  onTaskDelete,
 }: KanbanColumnProps) {
   const dragOverColumn = useDragOverColumn();
   const setDragOverColumn = useSetDragOverColumn();
@@ -128,56 +131,7 @@ export default function KanbanColumn({
         {tasks.length > 0 ? (
           <Stack spacing={2}>
             {tasks.map((task) => (
-              <Paper
-                key={task.id}
-                elevation={1}
-                sx={{
-                  p: 2,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease-in-out",
-                  "&:hover": {
-                    elevation: 3,
-                    transform: "translateY(-2px)",
-                  },
-                }}
-              >
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  {task.title}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {task.description}
-                </Typography>
-                {task.tags && task.tags.length > 0 && (
-                  <Stack direction="row" spacing={0.5} sx={{ mt: 1 }}>
-                    {task.tags.slice(0, 3).map((tag, index) => (
-                      <Chip
-                        key={index}
-                        label={tag}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: "0.75rem" }}
-                      />
-                    ))}
-                    {task.tags.length > 3 && (
-                      <Chip
-                        label={`+${task.tags.length - 3}`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: "0.75rem" }}
-                      />
-                    )}
-                  </Stack>
-                )}
-              </Paper>
+              <TaskCard key={task.id} task={task} onDelete={onTaskDelete} />
             ))}
           </Stack>
         ) : (
