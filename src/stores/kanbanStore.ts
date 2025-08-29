@@ -243,36 +243,24 @@ export const useTasksByColumn = (tasks: Task[] = [], column: ColumnType) => {
     });
 };
 
-// Selector for search state
-export const useSearchState = () => {
-    return useKanbanStore((state) => ({
-        searchQuery: state.searchQuery,
-        setSearchQuery: state.setSearchQuery,
-        clearSearch: state.clearSearch,
-    }));
-};
+// Individual selectors for search state (prevents infinite loop)
+export const useSearchQuery = () => useKanbanStore((state) => state.searchQuery);
+export const useSetSearchQuery = () => useKanbanStore((state) => state.setSearchQuery);
+export const useClearSearch = () => useKanbanStore((state) => state.clearSearch);
 
-// Selector for task form state
-export const useTaskFormState = () => {
-    return useKanbanStore((state) => ({
-        isTaskFormOpen: state.isTaskFormOpen,
-        taskFormMode: state.taskFormMode,
-        selectedTask: state.selectedTask,
-        initialColumn: state.initialColumn,
-        openTaskForm: state.openTaskForm,
-        closeTaskForm: state.closeTaskForm,
-        setSelectedTask: state.setSelectedTask,
-    }));
-};
+// Individual selectors for task form state (prevents infinite loop)
+export const useIsTaskFormOpen = () => useKanbanStore((state) => state.isTaskFormOpen);
+export const useTaskFormMode = () => useKanbanStore((state) => state.taskFormMode);
+export const useSelectedTask = () => useKanbanStore((state) => state.selectedTask);
+export const useInitialColumn = () => useKanbanStore((state) => state.initialColumn);
+export const useOpenTaskForm = () => useKanbanStore((state) => state.openTaskForm);
+export const useCloseTaskForm = () => useKanbanStore((state) => state.closeTaskForm);
+export const useSetSelectedTask = () => useKanbanStore((state) => state.setSelectedTask);
 
-// Selector for drag and drop state
-export const useDragState = () => {
-    return useKanbanStore((state) => ({
-        draggedTask: state.draggedTask,
-        isDragging: state.isDragging,
-        dragOverColumn: state.dragOverColumn,
-        setDraggedTask: state.setDraggedTask,
-        setIsDragging: state.setIsDragging,
-        setDragOverColumn: state.setDragOverColumn,
-    }));
-};
+// Individual selectors for drag and drop state (prevents infinite loop)
+export const useDraggedTask = () => useKanbanStore((state) => state.draggedTask);
+export const useIsDragging = () => useKanbanStore((state) => state.isDragging);
+export const useDragOverColumn = () => useKanbanStore((state) => state.dragOverColumn);
+export const useSetDraggedTask = () => useKanbanStore((state) => state.setDraggedTask);
+export const useSetIsDragging = () => useKanbanStore((state) => state.setIsDragging);
+export const useSetDragOverColumn = () => useKanbanStore((state) => state.setDragOverColumn);
