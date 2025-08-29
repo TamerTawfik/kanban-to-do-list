@@ -1,56 +1,44 @@
-
 {
-    "tasks": [
-        {
-            "id": 1,
-            "title": "Design homepage",
-            "description": "Create a modern homepage design with hero section, navigation, and footer. Include responsive design for mobile and desktop.",
-            "column": "backlog",
-            "priority": "high",
-            "tags": ["design", "frontend", "ui"],
-            "createdAt": "2024-01-15T10:00:00Z",
-            "updatedAt": "2024-01-15T10:00:00Z"
-        },
-        {
-            "id": 2,
-            "title": "Implement user authentication",
-            "description": "Set up login and registration functionality with JWT tokens and password hashing.",
-            "column": "in-progress",
-            "priority": "medium",
-            "tags": ["backend", "security", "auth"],
-            "createdAt": "2024-01-14T09:30:00Z",
-            "updatedAt": "2024-01-16T14:20:00Z"
-        },
-        {
-            "id": 3,
-            "title": "Write API documentation",
-            "description": "Document all REST API endpoints with examples and response formats.",
-            "column": "review",
-            "priority": "low",
-            "tags": ["documentation", "api"],
-            "createdAt": "2024-01-13T16:45:00Z",
-            "updatedAt": "2024-01-17T11:15:00Z"
-        },
-        {
-            "id": 4,
-            "title": "Deploy to production",
-            "description": "Set up CI/CD pipeline and deploy the application to production environment.",
-            "column": "done",
-            "priority": "high",
-            "tags": ["devops", "deployment", "ci-cd"],
-            "createdAt": "2024-01-12T08:00:00Z",
-            "updatedAt": "2024-01-18T17:30:00Z"
-        },
-        {
-            "id": 5,
-            "title": "Fix responsive layout issues",
-            "description": "Address mobile layout problems on task cards and navigation menu.",
-            "column": "backlog",
-            "priority": "medium",
-            "tags": ["frontend", "responsive", "bugfix"],
-            "createdAt": "2024-01-16T13:20:00Z",
-            "updatedAt": "2024-01-16T13:20:00Z"
-        }
-    ]
+  "tasks": [
+    {
+      "id": "1",
+      "title": "Design homepage",
+      "description": "Create a modern homepage design with hero section, navigation, and footer. Include responsive design for mobile and desktop.",
+      "column": "backlog",
+      "createdAt": "2024-01-15T10:00:00Z",
+      "updatedAt": "2024-01-15T10:00:00Z"
+    },
+    {
+      "id": "2",
+      "title": "Implement user authentication",
+      "description": "Set up login and registration functionality with JWT tokens and password hashing.",
+      "column": "in-progress",
+      "createdAt": "2024-01-14T09:30:00Z",
+      "updatedAt": "2025-08-29T03:14:44.346Z"
+    },
+    {
+      "id": "3",
+      "title": "Write API documentation",
+      "description": "Document all REST API endpoints with examples and response formats.",
+      "column": "review",
+      "createdAt": "2024-01-13T16:45:00Z",
+      "updatedAt": "2024-01-17T11:15:00Z"
+    },
+    {
+      "id": "4",
+      "title": "Deploy to production",
+      "description": "Set up CI/CD pipeline and deploy the application to production environment.",
+      "column": "done",
+      "createdAt": "2024-01-12T08:00:00Z",
+      "updatedAt": "2024-01-18T17:30:00Z"
+    },
+    {
+      "id": "5",
+      "title": "Fix responsive layout issues",
+      "description": "Address mobile layout problems on task cards and navigation menu.",
+      "column": "backlog",
+      "createdAt": "2024-01-16T13:20:00Z",
+      "updatedAt": "2024-01-16T13:20:00Z"
+    }
+  ]
 }
-  

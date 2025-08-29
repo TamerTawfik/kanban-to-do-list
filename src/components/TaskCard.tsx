@@ -7,7 +7,6 @@ import {
   CardActions,
   Typography,
   IconButton,
-  Chip,
   Stack,
   Box,
   Tooltip,
@@ -20,7 +19,6 @@ import {
   Delete as DeleteIcon,
   DragIndicator as DragIcon,
   Schedule as ScheduleIcon,
-  Flag as FlagIcon,
 } from "@mui/icons-material";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -34,13 +32,6 @@ interface TaskCardProps {
   isDragging?: boolean;
   searchQuery?: string;
 }
-
-// Priority color mapping
-const PRIORITY_COLORS: Record<string, string> = {
-  low: "#4caf50", // Green
-  medium: "#ff9800", // Orange
-  high: "#f44336", // Red
-};
 
 // Column color mapping for visual distinction
 const COLUMN_COLORS: Record<ColumnType, string> = {
@@ -148,9 +139,6 @@ export default function TaskCard({
   };
 
   const columnColor = COLUMN_COLORS[task.column];
-  const priorityColor = task.priority
-    ? PRIORITY_COLORS[task.priority]
-    : undefined;
 
   return (
     <Card
@@ -229,19 +217,6 @@ export default function TaskCard({
           >
             {highlightSearchText(task.title, searchQuery)}
           </Typography>
-
-          {/* Priority Indicator */}
-          {task.priority && (
-            <Tooltip title={`Priority: ${task.priority}`}>
-              <FlagIcon
-                sx={{
-                  fontSize: 16,
-                  color: priorityColor,
-                  mt: 0.25,
-                }}
-              />
-            </Tooltip>
-          )}
         </Stack>
 
         {/* Task Description */}
@@ -264,60 +239,21 @@ export default function TaskCard({
         )}
 
         {/* Task Metadata */}
-        <Stack spacing={1}>
-          {/* Tags */}
-          {task.tags && task.tags.length > 0 && (
-            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-              {task.tags.slice(0, isMobile ? 2 : 3).map((tag, index) => (
-                <Chip
-                  key={index}
-                  label={highlightSearchText(tag, searchQuery)}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    fontSize: "0.7rem",
-                    height: 20,
-                    borderColor: alpha(columnColor, 0.3),
-                    color: columnColor,
-                    "&:hover": {
-                      backgroundColor: alpha(columnColor, 0.1),
-                    },
-                  }}
-                />
-              ))}
-              {task.tags.length > (isMobile ? 2 : 3) && (
-                <Chip
-                  label={`+${task.tags.length - (isMobile ? 2 : 3)}`}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    fontSize: "0.7rem",
-                    height: 20,
-                    borderColor: alpha(theme.palette.text.secondary, 0.3),
-                    color: "text.secondary",
-                  }}
-                />
-              )}
-            </Stack>
-          )}
-
-          {/* Dates */}
-          {(task.createdAt || task.updatedAt) && (
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={0.5}
-              sx={{ color: "text.disabled" }}
-            >
-              <ScheduleIcon sx={{ fontSize: 12 }} />
-              <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
-                {task.updatedAt && task.updatedAt !== task.createdAt
-                  ? `Updated ${formatDate(task.updatedAt)}`
-                  : `Created ${formatDate(task.createdAt)}`}
-              </Typography>
-            </Stack>
-          )}
-        </Stack>
+        {(task.createdAt || task.updatedAt) && (
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={0.5}
+            sx={{ color: "text.disabled", mt: 1 }}
+          >
+            <ScheduleIcon sx={{ fontSize: 12 }} />
+            <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
+              {task.updatedAt && task.updatedAt !== task.createdAt
+                ? `Updated ${formatDate(task.updatedAt)}`
+                : `Created ${formatDate(task.createdAt)}`}
+            </Typography>
+          </Stack>
+        )}
       </CardContent>
 
       {/* Action Buttons */}

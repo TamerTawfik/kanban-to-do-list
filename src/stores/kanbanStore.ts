@@ -202,8 +202,7 @@ export const useFilteredTasks = (tasks: Task[] = []) => {
             filteredTasks = filteredTasks.filter(
                 (task) =>
                     task.title.toLowerCase().includes(query) ||
-                    task.description.toLowerCase().includes(query) ||
-                    (task.tags && task.tags.some(tag => tag.toLowerCase().includes(query)))
+                    task.description.toLowerCase().includes(query)
             );
         }
 
@@ -222,8 +221,7 @@ export const useTasksByColumn = (tasks: Task[] = [], column: ColumnType) => {
             columnTasks = columnTasks.filter(
                 (task) =>
                     task.title.toLowerCase().includes(query) ||
-                    task.description.toLowerCase().includes(query) ||
-                    (task.tags && task.tags.some(tag => tag.toLowerCase().includes(query)))
+                    task.description.toLowerCase().includes(query)
             );
         }
 
@@ -234,8 +232,7 @@ export const useTasksByColumn = (tasks: Task[] = [], column: ColumnType) => {
             columnTasks = columnTasks.filter(
                 (task) =>
                     task.title.toLowerCase().includes(filter) ||
-                    task.description.toLowerCase().includes(filter) ||
-                    (task.tags && task.tags.some(tag => tag.toLowerCase().includes(filter)))
+                    task.description.toLowerCase().includes(filter)
             );
         }
 

@@ -6,13 +6,34 @@ import {
   Typography,
   Alert,
   CircularProgress,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  DialogContentText,
 } from "@mui/material";
 import { ErrorBoundary } from "react-error-boundary";
 import SearchBar from "./SearchBar";
 import KanbanColumn from "./KanbanColumn";
-import { useTasks, useDeleteTask } from "@/hooks/useTasks";
-import { useSearchQuery } from "@/stores/kanbanStore";
-import { ColumnType } from "@/types/task.types";
+import TaskForm from "./TaskForm";
+import {
+  useTasks,
+  useDeleteTask,
+  useCreateTask,
+  useUpdateTask,
+} from "@/hooks/useTasks";
+import {
+  useSearchQuery,
+  useIsTaskFormOpen,
+  useTaskFormMode,
+  useSelectedTask,
+  useInitialColumn,
+  useCloseTaskForm,
+} from "@/stores/kanbanStore";
+import { ColumnType, TaskMutation, Task } from "@/types/task.types";
+import { useState } from "react";
 
 // Error fallback component
 function ErrorFallback({
@@ -43,6 +64,17 @@ const COLUMNS: Array<{ id: ColumnType; title: string }> = [
 
 export default function KanbanBoard() {
   const searchQuery = useSearchQuery();
+  const isTaskFormOpen = useIsTaskFormOpen();
+  const taskFormMode = useTaskFormMode();
+  const selectedTask = useSelectedTask();
+  const initialColumn = useInitialColumn();
+  const closeTaskForm = useCloseTaskForm();
+
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+
   const {
     data: tasks = [],
     isLoading,
@@ -53,12 +85,77 @@ export default function KanbanBoard() {
   });
 
   const deleteTaskMutation = useDeleteTask();
+  const createTaskMutation = useCreateTask();
+  const updateTaskMutation = useUpdateTask();
 
   const handleDeleteTask = (taskId: number) => {
-    if (window.confirm("Are you sure you want to delete this task?")) {
-      deleteTaskMutation.mutate(taskId);
+    const task = tasks.find((t) => t.id === taskId);
+    if (task) {
+      setTaskToDelete(task);
+      setDeleteDialogOpen(true);
     }
   };
+
+  const handleConfirmDelete = () => {
+    if (taskToDelete) {
+      deleteTaskMutation.mutate(taskToDelete.id, {
+        onSuccess: () => {
+          setSuccessMessage("Task deleted successfully!");
+          setDeleteDialogOpen(false);
+          setTaskToDelete(null);
+        },
+        onError: (error) => {
+          setErrorMessage(error.message || "Failed to delete task");
+          setDeleteDialogOpen(false);
+          setTaskToDelete(null);
+        },
+      });
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setTaskToDelete(null);
+  };
+
+  const handleTaskSubmit = (taskData: Omit<TaskMutation, "id">) => {
+    if (taskFormMode === "create") {
+      createTaskMutation.mutate(taskData, {
+        onSuccess: () => {
+          setSuccessMessage("Task created successfully!");
+          closeTaskForm();
+        },
+        onError: (error) => {
+          setErrorMessage(error.message || "Failed to create task");
+        },
+      });
+    } else if (taskFormMode === "edit" && selectedTask) {
+      updateTaskMutation.mutate(
+        { id: selectedTask.id, updates: taskData },
+        {
+          onSuccess: () => {
+            setSuccessMessage("Task updated successfully!");
+            closeTaskForm();
+          },
+          onError: (error) => {
+            setErrorMessage(error.message || "Failed to update task");
+          },
+        }
+      );
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSuccessMessage("");
+    setErrorMessage("");
+  };
+
+  const isFormLoading =
+    createTaskMutation.isPending || updateTaskMutation.isPending;
+  const formError =
+    createTaskMutation.error?.message ||
+    updateTaskMutation.error?.message ||
+    null;
 
   if (isError) {
     return (
@@ -176,6 +273,74 @@ export default function KanbanBoard() {
             </Typography>
           </Box>
         )}
+
+        {/* Task Form Dialog */}
+        <TaskForm
+          open={isTaskFormOpen}
+          mode={taskFormMode}
+          task={selectedTask || undefined}
+          initialColumn={initialColumn || undefined}
+          onSubmit={handleTaskSubmit}
+          onCancel={closeTaskForm}
+          isLoading={isFormLoading}
+          error={formError}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={handleCancelDelete}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            <Typography variant="h6" component="div">
+              Delete Task
+            </Typography>
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete the task &quot;
+              {taskToDelete?.title}
+              &quot;? This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button
+              onClick={handleCancelDelete}
+              disabled={deleteTaskMutation.isPending}
+              color="inherit"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmDelete}
+              disabled={deleteTaskMutation.isPending}
+              color="error"
+              variant="contained"
+              sx={{ minWidth: 100 }}
+            >
+              {deleteTaskMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Success/Error Notifications */}
+        <Snackbar
+          open={!!successMessage}
+          autoHideDuration={4000}
+          onClose={handleCloseSnackbar}
+          message={successMessage}
+        />
+        <Snackbar
+          open={!!errorMessage}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+        >
+          <Alert severity="error" onClose={handleCloseSnackbar}>
+            {errorMessage}
+          </Alert>
+        </Snackbar>
       </Container>
     </ErrorBoundary>
   );
