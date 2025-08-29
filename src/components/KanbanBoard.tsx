@@ -51,7 +51,7 @@ import {
   useDraggedTask,
 } from "@/stores/kanbanStore";
 import { ColumnType, TaskMutation, Task } from "@/types/task.types";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 // Error fallback component
 function ErrorFallback({
@@ -111,14 +111,30 @@ export default function KanbanBoard() {
     })
   );
 
-  const {
-    data: tasks = [],
-    isLoading,
-    error,
-    isError,
-  } = useTasks({
-    search: searchQuery || undefined,
-  });
+  const { data: allTasks = [], isLoading, error, isError } = useTasks();
+
+  // Client-side filtering for search as per requirements
+  const tasks = useMemo(() => {
+    if (!searchQuery.trim()) return allTasks;
+
+    const query = searchQuery.toLowerCase().trim();
+    let filteredTasks = allTasks.filter(
+      (task) =>
+        task.title.toLowerCase().includes(query) ||
+        task.description.toLowerCase().includes(query)
+    );
+
+    // Edge case: If a task is being dragged and gets filtered out by search,
+    // keep it in the results to prevent drag operation issues
+    if (
+      draggedTask &&
+      !filteredTasks.find((task) => task.id === draggedTask.id)
+    ) {
+      filteredTasks = [...filteredTasks, draggedTask];
+    }
+
+    return filteredTasks;
+  }, [allTasks, searchQuery, draggedTask]);
 
   const deleteTaskMutation = useDeleteTask();
   const createTaskMutation = useCreateTask();
@@ -217,6 +233,9 @@ export default function KanbanBoard() {
     setDraggedTask(null);
     setIsDragging(false);
     setDragOverColumn(null);
+
+    // Note: Search state is maintained during drag operations
+    // The search query remains active and will continue filtering tasks
 
     // If no valid drop target, show feedback
     if (!over) {

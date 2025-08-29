@@ -14,7 +14,7 @@
       "description": "Set up login and registration functionality with JWT tokens and password hashing.",
       "column": "in-progress",
       "createdAt": "2024-01-14T09:30:00Z",
-      "updatedAt": "2025-08-29T03:14:44.346Z"
+      "updatedAt": "2025-08-29T04:33:48.119Z"
     },
     {
       "id": "3",
@@ -38,7 +38,7 @@
       "description": "Address mobile layout problems on task cards and navigation menu.",
       "column": "done",
       "createdAt": "2024-01-16T13:20:00Z",
-      "updatedAt": "2025-08-29T04:17:52.150Z"
+      "updatedAt": "2025-08-29T04:27:50.362Z"
     }
   ]
 }

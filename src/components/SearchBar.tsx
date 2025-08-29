@@ -14,7 +14,7 @@ import {
   useClearSearch,
   useOpenTaskForm,
 } from "@/stores/kanbanStore";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 
 interface SearchBarProps {
   placeholder?: string;
@@ -28,6 +28,7 @@ export default function SearchBar({
   const clearSearch = useClearSearch();
   const openTaskForm = useOpenTaskForm();
   const [localValue, setLocalValue] = useState(searchQuery);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Debounce search input
   useEffect(() => {
@@ -43,6 +44,38 @@ export default function SearchBar({
     setLocalValue(searchQuery);
   }, [searchQuery]);
 
+  // Global keyboard shortcut to focus search
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      // Ctrl/Cmd + K to focus search
+      if ((event.ctrlKey || event.metaKey) && event.key === "k") {
+        event.preventDefault();
+        inputRef.current?.focus();
+      }
+      // Forward slash (/) to focus search (like GitHub)
+      if (
+        event.key === "/" &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        // Only if not typing in an input/textarea
+        const activeElement = document.activeElement;
+        if (
+          activeElement?.tagName !== "INPUT" &&
+          activeElement?.tagName !== "TEXTAREA" &&
+          !activeElement?.hasAttribute("contenteditable")
+        ) {
+          event.preventDefault();
+          inputRef.current?.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
+
   const handleClear = useCallback(() => {
     setLocalValue("");
     clearSearch();
@@ -52,6 +85,11 @@ export default function SearchBar({
     (event: React.KeyboardEvent) => {
       if (event.key === "Escape") {
         handleClear();
+      }
+      // Ctrl/Cmd + K to focus search (common shortcut)
+      if ((event.ctrlKey || event.metaKey) && event.key === "k") {
+        event.preventDefault();
+        (event.target as HTMLInputElement).focus();
       }
     },
     [handleClear]
@@ -70,6 +108,7 @@ export default function SearchBar({
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
         onKeyDown={handleKeyDown}
+        inputRef={inputRef}
         slotProps={{
           input: {
             startAdornment: (
