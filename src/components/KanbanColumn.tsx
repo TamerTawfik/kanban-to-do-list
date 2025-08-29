@@ -4,15 +4,20 @@
 import { Box, Paper, Typography, Chip, Stack, alpha } from "@mui/material";
 import { Assignment } from "@mui/icons-material";
 import { useDroppable } from "@dnd-kit/core";
-import { useDragOverColumn, useSetDragOverColumn } from "@/stores/kanbanStore";
+import {
+  useDragOverColumn,
+  useSetDragOverColumn,
+  useColumnPaginationState,
+  useSetCurrentPage,
+} from "@/stores/kanbanStore";
 import { Task, ColumnType } from "@/types/task.types";
-import TaskCard from "./TaskCard";
+import { usePaginatedColumnTasks } from "@/hooks/usePaginatedColumnTasks";
+import PaginationContainer from "./PaginationContainer";
 
 interface KanbanColumnProps {
   columnId: ColumnType;
   title: string;
-  tasks: Task[];
-  onTaskDrop?: (taskId: number, newColumn: ColumnType) => void;
+  searchQuery?: string;
   onTaskDelete?: (taskId: number) => void;
 }
 
@@ -27,13 +32,47 @@ const COLUMN_COLORS: Record<ColumnType, string> = {
 export default function KanbanColumn({
   columnId,
   title,
-  tasks,
-  onTaskDrop,
+  searchQuery,
   onTaskDelete,
 }: KanbanColumnProps) {
   const dragOverColumn = useDragOverColumn();
   const setDragOverColumn = useSetDragOverColumn();
   const columnColor = COLUMN_COLORS[columnId];
+
+  // Get pagination state for this column
+  const paginationState = useColumnPaginationState(columnId);
+  const setCurrentPage = useSetCurrentPage();
+
+  console.log(
+    `[KanbanColumn] ${columnId} - Current pagination state:`,
+    paginationState
+  );
+
+  // Use pagination hook for this column
+  const {
+    tasks,
+    currentPage,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    isLoading,
+    error,
+    refetch,
+    data,
+  } = usePaginatedColumnTasks({
+    columnId,
+    page: paginationState.currentPage,
+    searchQuery,
+    pageSize: 10,
+  });
+
+  // Calculate total tasks from pagination metadata
+  const totalTasks = data?.total ?? 0;
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(columnId, page);
+  };
 
   // Set up drop zone for drag and drop
   const { isOver, setNodeRef } = useDroppable({
@@ -53,8 +92,7 @@ export default function KanbanColumn({
       ref={setNodeRef}
       elevation={shouldHighlight ? 4 : 2}
       sx={{
-        height: "fit-content",
-        minHeight: 400,
+        height: 520, // Increased height to provide more scroll space
         display: "flex",
         flexDirection: "column",
         backgroundColor: "background.paper",
@@ -74,6 +112,7 @@ export default function KanbanColumn({
           p: 2,
           backgroundColor: alpha(columnColor, 0.1),
           borderBottom: `1px solid ${alpha(columnColor, 0.2)}`,
+          flexShrink: 0, // Prevent header from shrinking
         }}
       >
         <Stack
@@ -97,7 +136,7 @@ export default function KanbanColumn({
               {title}
             </Typography>
             <Chip
-              label={tasks.length}
+              label={totalTasks}
               size="small"
               sx={{
                 backgroundColor: columnColor,
@@ -107,6 +146,7 @@ export default function KanbanColumn({
                 height: 20,
                 "& .MuiChip-label": {
                   px: 1,
+                  fontSize: "0.75rem",
                 },
               }}
             />
@@ -114,26 +154,46 @@ export default function KanbanColumn({
         </Stack>
       </Box>
 
-      {/* Column Content - Drop Zone */}
+      {/* Column Content - Drop Zone with Scrollable Container */}
       <Box
         sx={{
           flex: 1,
-          p: 2,
-          minHeight: 300,
           position: "relative",
           backgroundColor: shouldHighlight
             ? alpha(columnColor, 0.05)
             : "transparent",
           transition: "background-color 0.2s ease-in-out",
+          overflow: "auto", // Enable scrolling for the content
+          "&::-webkit-scrollbar": {
+            width: "6px",
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: alpha(columnColor, 0.1),
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: alpha(columnColor, 0.3),
+            borderRadius: "3px",
+            "&:hover": {
+              backgroundColor: alpha(columnColor, 0.5),
+            },
+          },
         }}
       >
-        {/* Tasks will be rendered here */}
-        {tasks.length > 0 ? (
-          <Stack spacing={2}>
-            {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} onDelete={onTaskDelete} />
-            ))}
-          </Stack>
+        {/* Pagination Container */}
+        {tasks.length > 0 || isLoading ? (
+          <PaginationContainer
+            columnId={columnId}
+            tasks={tasks}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            onTaskDelete={onTaskDelete}
+            isLoading={isLoading}
+            error={error}
+            refetch={refetch}
+            searchQuery={searchQuery}
+            columnColor={columnColor}
+          />
         ) : (
           // Empty state with drop zone indication
           <Box
@@ -145,7 +205,7 @@ export default function KanbanColumn({
               height: "100%",
               color: "text.secondary",
               textAlign: "center",
-              py: 4,
+              p: 3,
               border: shouldHighlight
                 ? `2px dashed ${alpha(columnColor, 0.5)}`
                 : `2px dashed ${alpha(columnColor, 0.1)}`,
@@ -154,6 +214,7 @@ export default function KanbanColumn({
                 ? alpha(columnColor, 0.05)
                 : "transparent",
               transition: "all 0.2s ease-in-out",
+              m: 2,
             }}
           >
             <Assignment
@@ -186,7 +247,9 @@ export default function KanbanColumn({
             >
               {shouldHighlight
                 ? "Release to add task here"
-                : 'Drag tasks here or use "Add Task" button above to get started'}
+                : searchQuery
+                ? "No tasks match your search"
+                : "Drag tasks here or create a new task to get started"}
             </Typography>
           </Box>
         )}

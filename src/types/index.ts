@@ -3,4 +3,5 @@
  * Re-exports all type definitions for easier imports
  */
 
+export * from './task.types';
 export * from './kanban.types';

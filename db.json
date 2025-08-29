@@ -12,9 +12,9 @@
       "id": "2",
       "title": "Implement user authentication",
       "description": "Set up login and registration functionality with JWT tokens and password hashing.",
-      "column": "in-progress",
+      "column": "backlog",
       "createdAt": "2024-01-14T09:30:00Z",
-      "updatedAt": "2025-08-29T04:33:48.119Z"
+      "updatedAt": "2025-08-29T21:26:17.101Z"
     },
     {
       "id": "3",
@@ -22,7 +22,7 @@
       "description": "Document all REST API endpoints with examples and response formats.",
       "column": "backlog",
       "createdAt": "2024-01-13T16:45:00Z",
-      "updatedAt": "2025-08-29T04:17:59.022Z"
+      "updatedAt": "2025-08-29T18:38:02.179Z"
     },
     {
       "id": "4",
@@ -39,6 +39,206 @@
       "column": "done",
       "createdAt": "2024-01-16T13:20:00Z",
       "updatedAt": "2025-08-29T04:27:50.362Z"
+    },
+    {
+      "id": "6",
+      "title": "Set up database schema",
+      "description": "Design and implement the database schema for user data, tasks, and project management.",
+      "column": "backlog",
+      "createdAt": "2024-01-17T11:15:00Z",
+      "updatedAt": "2024-01-17T11:15:00Z"
+    },
+    {
+      "id": "7",
+      "title": "Create user profile page",
+      "description": "Build a comprehensive user profile page with avatar upload, settings, and preferences.",
+      "column": "backlog",
+      "createdAt": "2024-01-18T14:30:00Z",
+      "updatedAt": "2024-01-18T14:30:00Z"
+    },
+    {
+      "id": "8",
+      "title": "Implement search functionality",
+      "description": "Add global search across tasks, projects, and users with filters and sorting options.",
+      "column": "backlog",
+      "createdAt": "2024-01-19T09:45:00Z",
+      "updatedAt": "2024-01-19T09:45:00Z"
+    },
+    {
+      "id": "9",
+      "title": "Add notification system",
+      "description": "Implement real-time notifications for task updates, mentions, and deadlines.",
+      "column": "backlog",
+      "createdAt": "2024-01-20T16:20:00Z",
+      "updatedAt": "2024-01-20T16:20:00Z"
+    },
+    {
+      "id": "10",
+      "title": "Build dashboard analytics",
+      "description": "Create analytics dashboard with charts showing task completion rates and team productivity.",
+      "column": "backlog",
+      "createdAt": "2024-01-21T10:10:00Z",
+      "updatedAt": "2024-01-21T10:10:00Z"
+    },
+    {
+      "id": "11",
+      "title": "Implement file upload system",
+      "description": "Add file attachment functionality to tasks with drag-and-drop support and preview.",
+      "column": "backlog",
+      "createdAt": "2024-01-22T13:55:00Z",
+      "updatedAt": "2024-01-22T13:55:00Z"
+    },
+    {
+      "id": "12",
+      "title": "Create team collaboration features",
+      "description": "Build team workspace with shared projects, role-based permissions, and activity feeds.",
+      "column": "backlog",
+      "createdAt": "2024-01-23T08:40:00Z",
+      "updatedAt": "2024-01-23T08:40:00Z"
+    },
+    {
+      "id": "13",
+      "title": "Add calendar integration",
+      "description": "Integrate with Google Calendar and Outlook for task scheduling and deadline tracking.",
+      "column": "backlog",
+      "createdAt": "2024-01-24T15:25:00Z",
+      "updatedAt": "2024-01-24T15:25:00Z"
+    },
+    {
+      "id": "14",
+      "title": "Implement dark mode",
+      "description": "Add dark theme support with user preference persistence and smooth transitions.",
+      "column": "backlog",
+      "createdAt": "2024-01-25T12:00:00Z",
+      "updatedAt": "2024-01-25T12:00:00Z"
+    },
+    {
+      "id": "15",
+      "title": "Build mobile app",
+      "description": "Develop React Native mobile application with offline sync capabilities.",
+      "column": "backlog",
+      "createdAt": "2024-01-26T17:30:00Z",
+      "updatedAt": "2024-01-26T17:30:00Z"
+    },
+    {
+      "id": "16",
+      "title": "Set up error tracking",
+      "description": "Integrate Sentry for error monitoring and performance tracking across the application.",
+      "column": "backlog",
+      "createdAt": "2024-01-27T09:15:00Z",
+      "updatedAt": "2025-08-29T20:13:36.411Z"
+    },
+    {
+      "id": "17",
+      "title": "Optimize database queries",
+      "description": "Review and optimize slow database queries, add proper indexing and caching strategies.",
+      "column": "backlog",
+      "createdAt": "2024-01-28T14:45:00Z",
+      "updatedAt": "2025-08-29T20:13:39.996Z"
+    },
+    {
+      "id": "18",
+      "title": "Implement email notifications",
+      "description": "Set up email service for task reminders, weekly summaries, and important updates.",
+      "column": "backlog",
+      "createdAt": "2024-01-29T11:20:00Z",
+      "updatedAt": "2025-08-29T20:13:44.318Z"
+    },
+    {
+      "id": "19",
+      "title": "Add task templates",
+      "description": "Create reusable task templates for common workflows and project types.",
+      "column": "backlog",
+      "createdAt": "2024-01-30T16:10:00Z",
+      "updatedAt": "2025-08-29T20:15:39.914Z"
+    },
+    {
+      "id": "20",
+      "title": "Build reporting system",
+      "description": "Create comprehensive reporting with exportable charts, time tracking, and productivity metrics.",
+      "column": "backlog",
+      "createdAt": "2024-01-31T13:35:00Z",
+      "updatedAt": "2025-08-29T20:32:20.805Z"
+    },
+    {
+      "id": "21",
+      "title": "Implement keyboard shortcuts",
+      "description": "Add keyboard shortcuts for common actions like creating tasks, navigation, and quick editing.",
+      "column": "done",
+      "createdAt": "2024-02-01T10:50:00Z",
+      "updatedAt": "2025-08-29T20:16:04.394Z"
+    },
+    {
+      "id": "22",
+      "title": "Add bulk operations",
+      "description": "Enable bulk editing, moving, and deleting of multiple tasks simultaneously.",
+      "column": "done",
+      "createdAt": "2024-02-02T15:25:00Z",
+      "updatedAt": "2025-08-29T20:16:19.653Z"
+    },
+    {
+      "id": "23",
+      "title": "Create onboarding flow",
+      "description": "Design and implement user onboarding with interactive tutorials and sample data.",
+      "column": "in-progress",
+      "createdAt": "2024-02-03T12:40:00Z",
+      "updatedAt": "2024-02-03T12:40:00Z"
+    },
+    {
+      "id": "24",
+      "title": "Set up automated testing",
+      "description": "Implement comprehensive test suite with unit, integration, and end-to-end tests.",
+      "column": "done",
+      "createdAt": "2024-02-04T09:05:00Z",
+      "updatedAt": "2024-02-04T18:30:00Z"
+    },
+    {
+      "id": "25",
+      "title": "Configure monitoring dashboard",
+      "description": "Set up application monitoring with Grafana dashboards for system health and performance.",
+      "column": "done",
+      "createdAt": "2024-02-05T14:20:00Z",
+      "updatedAt": "2024-02-05T20:15:00Z"
+    },
+    {
+      "id": "26",
+      "title": "Implement data backup system",
+      "description": "Create automated backup system with point-in-time recovery and disaster recovery procedures.",
+      "column": "done",
+      "createdAt": "2024-02-06T11:30:00Z",
+      "updatedAt": "2024-02-06T17:45:00Z"
+    },
+    {
+      "id": "27",
+      "title": "Add security audit",
+      "description": "Conduct comprehensive security audit including penetration testing and vulnerability assessment.",
+      "column": "done",
+      "createdAt": "2024-02-07T16:15:00Z",
+      "updatedAt": "2024-02-07T22:00:00Z"
+    },
+    {
+      "id": "28",
+      "title": "Optimize bundle size",
+      "description": "Analyze and optimize JavaScript bundle size with code splitting and lazy loading.",
+      "column": "done",
+      "createdAt": "2024-02-08T13:50:00Z",
+      "updatedAt": "2024-02-08T19:20:00Z"
+    },
+    {
+      "id": "29",
+      "title": "Set up CDN",
+      "description": "Configure content delivery network for static assets and improved global performance.",
+      "column": "done",
+      "createdAt": "2024-02-09T10:25:00Z",
+      "updatedAt": "2024-02-09T16:40:00Z"
+    },
+    {
+      "id": "30",
+      "title": "Implement caching strategy",
+      "description": "Design and implement multi-layer caching with Redis for improved application performance.",
+      "column": "done",
+      "createdAt": "2024-02-10T15:10:00Z",
+      "updatedAt": "2024-02-10T21:30:00Z"
     }
   ]
 }

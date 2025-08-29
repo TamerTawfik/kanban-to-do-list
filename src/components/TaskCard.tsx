@@ -45,7 +45,7 @@ export default function TaskCard({
   task,
   onEdit,
   onDelete,
-  isDragging = false,
+  isDragging: _isDragging = false,
   searchQuery: propSearchQuery,
 }: TaskCardProps) {
   const theme = useTheme();

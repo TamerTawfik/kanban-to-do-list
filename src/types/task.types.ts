@@ -25,7 +25,8 @@ export interface TaskMutation {
 export interface TasksResponse {
     tasks: Task[];
     total: number;
-    page: number;
+    currentPage: number;
+    totalPages: number;
     limit: number;
     hasMore: boolean;
 }

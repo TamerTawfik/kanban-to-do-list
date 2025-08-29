@@ -2,6 +2,14 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { Task, ColumnType } from '@/types/task.types';
 
+// Column pagination state interface
+interface ColumnPaginationState {
+    currentPage: number;
+    totalPages: number;
+    isLoading: boolean;
+    totalTasks: number;
+}
+
 interface KanbanState {
     // Search state
     searchQuery: string;
@@ -16,15 +24,21 @@ interface KanbanState {
     draggedTask: Task | null;
     isDragging: boolean;
     dragOverColumn: ColumnType | null;
+    autoScrollDirection: 'up' | 'down' | null;
+    dragScrollSpeed: number;
 
     // Column filters (for future use)
     columnFilters: Record<ColumnType, string>;
+
+    // Pagination state
+    columnPaginationState: Record<ColumnType, ColumnPaginationState>;
 }
 
 interface KanbanActions {
     // Search actions
     setSearchQuery: (query: string) => void;
     clearSearch: () => void;
+    resetPaginationForSearch: () => void;
 
     // Task form actions
     openTaskForm: (mode: 'create' | 'edit', task?: Task, initialColumn?: ColumnType) => void;
@@ -35,17 +49,33 @@ interface KanbanActions {
     setDraggedTask: (task: Task | null) => void;
     setIsDragging: (isDragging: boolean) => void;
     setDragOverColumn: (column: ColumnType | null) => void;
+    setAutoScrollDirection: (direction: 'up' | 'down' | null) => void;
+    setDragScrollSpeed: (speed: number) => void;
+    updateTaskCountsAfterDrag: (sourceColumn: ColumnType, targetColumn: ColumnType) => void;
 
     // Column filter actions
     setColumnFilter: (column: ColumnType, filter: string) => void;
     clearColumnFilter: (column: ColumnType) => void;
     clearAllFilters: () => void;
 
+    // Pagination actions
+    setColumnPaginationState: (column: ColumnType, state: Partial<ColumnPaginationState>) => void;
+    resetColumnPaginationState: (column: ColumnType) => void;
+    resetAllColumnPaginationStates: () => void;
+    setCurrentPage: (column: ColumnType, page: number) => void;
+
     // Reset actions
     resetState: () => void;
 }
 
 type KanbanStore = KanbanState & KanbanActions;
+
+const initialColumnPaginationState: ColumnPaginationState = {
+    currentPage: 1,
+    totalPages: 0,
+    isLoading: false,
+    totalTasks: 0,
+};
 
 const initialState: KanbanState = {
     searchQuery: '',
@@ -56,11 +86,19 @@ const initialState: KanbanState = {
     draggedTask: null,
     isDragging: false,
     dragOverColumn: null,
+    autoScrollDirection: null,
+    dragScrollSpeed: 0,
     columnFilters: {
         backlog: '',
         'in-progress': '',
         review: '',
         done: '',
+    },
+    columnPaginationState: {
+        backlog: { ...initialColumnPaginationState },
+        'in-progress': { ...initialColumnPaginationState },
+        review: { ...initialColumnPaginationState },
+        done: { ...initialColumnPaginationState },
     },
 };
 
@@ -73,16 +111,58 @@ export const useKanbanStore = create<KanbanStore>()(
             // Search actions
             setSearchQuery: (query: string) =>
                 set(
-                    { searchQuery: query },
+                    (state) => {
+                        // Reset all column pagination states when search query changes
+                        const newColumnPaginationState = Object.keys(state.columnPaginationState).reduce(
+                            (acc, column) => ({
+                                ...acc,
+                                [column]: { ...initialColumnPaginationState },
+                            }),
+                            {} as Record<ColumnType, ColumnPaginationState>
+                        );
+
+                        return {
+                            searchQuery: query,
+                            columnPaginationState: newColumnPaginationState,
+                        };
+                    },
                     false,
                     'setSearchQuery'
                 ),
 
             clearSearch: () =>
                 set(
-                    { searchQuery: '' },
+                    (state) => {
+                        // Reset all column pagination states when clearing search
+                        const newColumnPaginationState = Object.keys(state.columnPaginationState).reduce(
+                            (acc, column) => ({
+                                ...acc,
+                                [column]: { ...initialColumnPaginationState },
+                            }),
+                            {} as Record<ColumnType, ColumnPaginationState>
+                        );
+
+                        return {
+                            searchQuery: '',
+                            columnPaginationState: newColumnPaginationState,
+                        };
+                    },
                     false,
                     'clearSearch'
+                ),
+
+            resetPaginationForSearch: () =>
+                set(
+                    () => ({
+                        columnPaginationState: {
+                            backlog: { ...initialColumnPaginationState },
+                            'in-progress': { ...initialColumnPaginationState },
+                            review: { ...initialColumnPaginationState },
+                            done: { ...initialColumnPaginationState },
+                        },
+                    }),
+                    false,
+                    'resetPaginationForSearch'
                 ),
 
             // Task form actions
@@ -138,6 +218,45 @@ export const useKanbanStore = create<KanbanStore>()(
                     'setDragOverColumn'
                 ),
 
+            setAutoScrollDirection: (direction: 'up' | 'down' | null) =>
+                set(
+                    { autoScrollDirection: direction },
+                    false,
+                    'setAutoScrollDirection'
+                ),
+
+            setDragScrollSpeed: (speed: number) =>
+                set(
+                    { dragScrollSpeed: speed },
+                    false,
+                    'setDragScrollSpeed'
+                ),
+
+            updateTaskCountsAfterDrag: (sourceColumn: ColumnType, targetColumn: ColumnType) =>
+                set(
+                    (state) => {
+                        const newColumnPaginationState = { ...state.columnPaginationState };
+
+                        // Decrease count in source column
+                        if (newColumnPaginationState[sourceColumn].totalTasks > 0) {
+                            newColumnPaginationState[sourceColumn] = {
+                                ...newColumnPaginationState[sourceColumn],
+                                totalTasks: newColumnPaginationState[sourceColumn].totalTasks - 1,
+                            };
+                        }
+
+                        // Increase count in target column
+                        newColumnPaginationState[targetColumn] = {
+                            ...newColumnPaginationState[targetColumn],
+                            totalTasks: newColumnPaginationState[targetColumn].totalTasks + 1,
+                        };
+
+                        return { columnPaginationState: newColumnPaginationState };
+                    },
+                    false,
+                    'updateTaskCountsAfterDrag'
+                ),
+
             // Column filter actions
             setColumnFilter: (column: ColumnType, filter: string) =>
                 set(
@@ -175,6 +294,63 @@ export const useKanbanStore = create<KanbanStore>()(
                     },
                     false,
                     'clearAllFilters'
+                ),
+
+            // Pagination actions
+            setColumnPaginationState: (column: ColumnType, state: Partial<ColumnPaginationState>) =>
+                set(
+                    (currentState) => ({
+                        columnPaginationState: {
+                            ...currentState.columnPaginationState,
+                            [column]: {
+                                ...currentState.columnPaginationState[column],
+                                ...state,
+                            },
+                        },
+                    }),
+                    false,
+                    'setColumnPaginationState'
+                ),
+
+            resetColumnPaginationState: (column: ColumnType) =>
+                set(
+                    (state) => ({
+                        columnPaginationState: {
+                            ...state.columnPaginationState,
+                            [column]: { ...initialColumnPaginationState },
+                        },
+                    }),
+                    false,
+                    'resetColumnPaginationState'
+                ),
+
+            resetAllColumnPaginationStates: () =>
+                set(
+                    {
+                        columnPaginationState: {
+                            backlog: { ...initialColumnPaginationState },
+                            'in-progress': { ...initialColumnPaginationState },
+                            review: { ...initialColumnPaginationState },
+                            done: { ...initialColumnPaginationState },
+                        },
+                    },
+                    false,
+                    'resetAllColumnPaginationStates'
+                ),
+
+            setCurrentPage: (column: ColumnType, page: number) =>
+                set(
+                    (state) => ({
+                        columnPaginationState: {
+                            ...state.columnPaginationState,
+                            [column]: {
+                                ...state.columnPaginationState[column],
+                                currentPage: page,
+                            },
+                        },
+                    }),
+                    false,
+                    'setCurrentPage'
                 ),
 
             // Reset actions
@@ -244,6 +420,7 @@ export const useTasksByColumn = (tasks: Task[] = [], column: ColumnType) => {
 export const useSearchQuery = () => useKanbanStore((state) => state.searchQuery);
 export const useSetSearchQuery = () => useKanbanStore((state) => state.setSearchQuery);
 export const useClearSearch = () => useKanbanStore((state) => state.clearSearch);
+export const useResetPaginationForSearch = () => useKanbanStore((state) => state.resetPaginationForSearch);
 
 // Individual selectors for task form state (prevents infinite loop)
 export const useIsTaskFormOpen = () => useKanbanStore((state) => state.isTaskFormOpen);
@@ -258,6 +435,19 @@ export const useSetSelectedTask = () => useKanbanStore((state) => state.setSelec
 export const useDraggedTask = () => useKanbanStore((state) => state.draggedTask);
 export const useIsDragging = () => useKanbanStore((state) => state.isDragging);
 export const useDragOverColumn = () => useKanbanStore((state) => state.dragOverColumn);
+export const useAutoScrollDirection = () => useKanbanStore((state) => state.autoScrollDirection);
+export const useDragScrollSpeed = () => useKanbanStore((state) => state.dragScrollSpeed);
 export const useSetDraggedTask = () => useKanbanStore((state) => state.setDraggedTask);
 export const useSetIsDragging = () => useKanbanStore((state) => state.setIsDragging);
 export const useSetDragOverColumn = () => useKanbanStore((state) => state.setDragOverColumn);
+export const useSetAutoScrollDirection = () => useKanbanStore((state) => state.setAutoScrollDirection);
+export const useSetDragScrollSpeed = () => useKanbanStore((state) => state.setDragScrollSpeed);
+export const useUpdateTaskCountsAfterDrag = () => useKanbanStore((state) => state.updateTaskCountsAfterDrag);
+
+// Individual selectors for pagination state (prevents infinite loop)
+export const useColumnPaginationState = (column: ColumnType) =>
+    useKanbanStore((state) => state.columnPaginationState[column]);
+export const useSetColumnPaginationState = () => useKanbanStore((state) => state.setColumnPaginationState);
+export const useResetColumnPaginationState = () => useKanbanStore((state) => state.resetColumnPaginationState);
+export const useResetAllColumnPaginationStates = () => useKanbanStore((state) => state.resetAllColumnPaginationStates);
+export const useSetCurrentPage = () => useKanbanStore((state) => state.setCurrentPage);

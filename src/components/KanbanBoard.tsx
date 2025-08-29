@@ -32,12 +32,12 @@ import SearchBar from "./SearchBar";
 import KanbanColumn from "./KanbanColumn";
 import TaskForm from "./TaskForm";
 import TaskCard from "./TaskCard";
+import { useDeleteTask, useCreateTask, useUpdateTask } from "@/hooks/useTasks";
 import {
-  useTasks,
-  useDeleteTask,
-  useCreateTask,
-  useUpdateTask,
-} from "@/hooks/useTasks";
+  usePaginatedColumnTasks,
+  paginatedTaskKeys,
+} from "@/hooks/usePaginatedColumnTasks";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useSearchQuery,
   useIsTaskFormOpen,
@@ -49,6 +49,8 @@ import {
   useSetIsDragging,
   useSetDragOverColumn,
   useDraggedTask,
+  useUpdateTaskCountsAfterDrag,
+  useColumnPaginationState,
 } from "@/stores/kanbanStore";
 import { ColumnType, TaskMutation, Task } from "@/types/task.types";
 import { useState, useMemo } from "react";
@@ -81,6 +83,7 @@ const COLUMNS: Array<{ id: ColumnType; title: string }> = [
 ];
 
 export default function KanbanBoard() {
+  const queryClient = useQueryClient();
   const searchQuery = useSearchQuery();
   const isTaskFormOpen = useIsTaskFormOpen();
   const taskFormMode = useTaskFormMode();
@@ -93,6 +96,12 @@ export default function KanbanBoard() {
   const setIsDragging = useSetIsDragging();
   const setDragOverColumn = useSetDragOverColumn();
   const draggedTask = useDraggedTask();
+
+  // Get pagination states for all columns
+  const backlogPagination = useColumnPaginationState("backlog");
+  const inProgressPagination = useColumnPaginationState("in-progress");
+  const reviewPagination = useColumnPaginationState("review");
+  const donePagination = useColumnPaginationState("done");
 
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -111,30 +120,65 @@ export default function KanbanBoard() {
     })
   );
 
-  const { data: allTasks = [], isLoading, error, isError } = useTasks();
+  // Use paginated column tasks for each column
+  const backlogQuery = usePaginatedColumnTasks({
+    columnId: "backlog",
+    page: backlogPagination.currentPage,
+    searchQuery,
+    pageSize: 10,
+  });
 
-  // Client-side filtering for search as per requirements
+  const inProgressQuery = usePaginatedColumnTasks({
+    columnId: "in-progress",
+    page: inProgressPagination.currentPage,
+    searchQuery,
+    pageSize: 10,
+  });
+
+  const reviewQuery = usePaginatedColumnTasks({
+    columnId: "review",
+    page: reviewPagination.currentPage,
+    searchQuery,
+    pageSize: 10,
+  });
+
+  const doneQuery = usePaginatedColumnTasks({
+    columnId: "done",
+    page: donePagination.currentPage,
+    searchQuery,
+    pageSize: 10,
+  });
+
+  // Combine all column queries for overall loading and error states
+  const columnQueries = [backlogQuery, inProgressQuery, reviewQuery, doneQuery];
+  const isLoading = columnQueries.some((query) => query.isLoading);
+  const isError = columnQueries.some((query) => query.error);
+  const error = columnQueries.find((query) => query.error)?.error;
+
+  // Combine all tasks from all columns for drag operations and search
+  const allTasks = useMemo(() => {
+    return [
+      ...backlogQuery.tasks,
+      ...inProgressQuery.tasks,
+      ...reviewQuery.tasks,
+      ...doneQuery.tasks,
+    ];
+  }, [
+    backlogQuery.tasks,
+    inProgressQuery.tasks,
+    reviewQuery.tasks,
+    doneQuery.tasks,
+  ]);
+
+  // For drag operations, we need access to all loaded tasks
   const tasks = useMemo(() => {
-    if (!searchQuery.trim()) return allTasks;
-
-    const query = searchQuery.toLowerCase().trim();
-    let filteredTasks = allTasks.filter(
-      (task) =>
-        task.title.toLowerCase().includes(query) ||
-        task.description.toLowerCase().includes(query)
-    );
-
-    // Edge case: If a task is being dragged and gets filtered out by search,
-    // keep it in the results to prevent drag operation issues
-    if (
-      draggedTask &&
-      !filteredTasks.find((task) => task.id === draggedTask.id)
-    ) {
-      filteredTasks = [...filteredTasks, draggedTask];
+    // If there's a search query, tasks are already filtered by the API
+    // If a task is being dragged and might be filtered out, keep it for drag operations
+    if (draggedTask && !allTasks.find((task) => task.id === draggedTask.id)) {
+      return [...allTasks, draggedTask];
     }
-
-    return filteredTasks;
-  }, [allTasks, searchQuery, draggedTask]);
+    return allTasks;
+  }, [allTasks, draggedTask]);
 
   const deleteTaskMutation = useDeleteTask();
   const createTaskMutation = useCreateTask();
@@ -150,11 +194,19 @@ export default function KanbanBoard() {
 
   const handleConfirmDelete = () => {
     if (taskToDelete) {
+      const taskColumn = taskToDelete.column;
+
       deleteTaskMutation.mutate(taskToDelete.id, {
         onSuccess: () => {
           setSuccessMessage("Task deleted successfully!");
           setDeleteDialogOpen(false);
           setTaskToDelete(null);
+
+          // Invalidate paginated queries for the affected column
+          queryClient.invalidateQueries({
+            queryKey: ["tasks", "paginated", taskColumn],
+            exact: false,
+          });
         },
         onError: (error) => {
           setErrorMessage(error.message || "Failed to delete task");
@@ -176,18 +228,42 @@ export default function KanbanBoard() {
         onSuccess: () => {
           setSuccessMessage("Task created successfully!");
           closeTaskForm();
+
+          // Invalidate paginated queries for the target column
+          const targetColumn = taskData.column;
+          queryClient.invalidateQueries({
+            queryKey: ["tasks", "paginated", targetColumn],
+            exact: false,
+          });
         },
         onError: (error) => {
           setErrorMessage(error.message || "Failed to create task");
         },
       });
     } else if (taskFormMode === "edit" && selectedTask) {
+      const originalColumn = selectedTask.column;
+      const newColumn = taskData.column;
+
       updateTaskMutation.mutate(
         { id: selectedTask.id, updates: taskData },
         {
           onSuccess: () => {
             setSuccessMessage("Task updated successfully!");
             closeTaskForm();
+
+            // Invalidate paginated queries for affected columns
+            queryClient.invalidateQueries({
+              queryKey: ["tasks", "paginated", originalColumn],
+              exact: false,
+            });
+
+            // If column changed, also invalidate the new column
+            if (newColumn && newColumn !== originalColumn) {
+              queryClient.invalidateQueries({
+                queryKey: ["tasks", "paginated", newColumn],
+                exact: false,
+              });
+            }
           },
           onError: (error) => {
             setErrorMessage(error.message || "Failed to update task");
@@ -264,7 +340,18 @@ export default function KanbanBoard() {
       return;
     }
 
-    // Update task column with optimistic update and comprehensive error handling
+    // Show success message immediately
+    const columnNames: Record<ColumnType, string> = {
+      backlog: "Backlog",
+      "in-progress": "In Progress",
+      review: "Review",
+      done: "Done",
+    };
+    setSuccessMessage(
+      `Task "${task.title}" moved to ${columnNames[targetColumnId]}`
+    );
+
+    // Update task column with comprehensive error handling
     updateTaskMutation.mutate(
       {
         id: task.id,
@@ -275,17 +362,29 @@ export default function KanbanBoard() {
       },
       {
         onSuccess: () => {
-          const columnNames: Record<ColumnType, string> = {
-            backlog: "Backlog",
-            "in-progress": "In Progress",
-            review: "Review",
-            done: "Done",
-          };
-          setSuccessMessage(
-            `Task "${task.title}" moved to ${columnNames[targetColumnId]}`
-          );
+          // Invalidate queries to ensure data consistency
+          const sourceColumn = task.column;
+          queryClient.invalidateQueries({
+            queryKey: ["tasks", "paginated", sourceColumn],
+            exact: false,
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["tasks", "paginated", targetColumnId],
+            exact: false,
+          });
         },
         onError: (error) => {
+          // Revert by invalidating queries
+          const sourceColumn = task.column;
+          queryClient.invalidateQueries({
+            queryKey: ["tasks", "paginated", sourceColumn],
+            exact: false,
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["tasks", "paginated", targetColumnId],
+            exact: false,
+          });
+
           // Provide specific error messages based on error type
           let errorMsg = "Failed to move task";
 
@@ -395,7 +494,7 @@ export default function KanbanBoard() {
                   key={column.id}
                   columnId={column.id}
                   title={column.title}
-                  tasks={tasks.filter((task) => task.column === column.id)}
+                  searchQuery={searchQuery}
                   onTaskDelete={handleDeleteTask}
                 />
               ))}
@@ -403,7 +502,7 @@ export default function KanbanBoard() {
           )}
 
           {/* Empty state when no tasks and not loading */}
-          {!isLoading && tasks.length === 0 && !searchQuery && (
+          {!isLoading && allTasks.length === 0 && !searchQuery && (
             <Box
               sx={{
                 textAlign: "center",
@@ -421,7 +520,7 @@ export default function KanbanBoard() {
           )}
 
           {/* No search results */}
-          {!isLoading && tasks.length === 0 && searchQuery && (
+          {!isLoading && allTasks.length === 0 && searchQuery && (
             <Box
               sx={{
                 textAlign: "center",
@@ -455,6 +554,9 @@ export default function KanbanBoard() {
                 filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.3))",
                 transition: "all 0.2s ease-in-out",
                 zIndex: 1000,
+                // Add visual indicator for infinite scroll compatibility
+                border: "2px dashed rgba(25, 118, 210, 0.5)",
+                borderRadius: 2,
               }}
             >
               <TaskCard task={draggedTask} isDragging />

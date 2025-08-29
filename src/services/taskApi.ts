@@ -50,19 +50,15 @@ export async function fetchTasksByColumn(params: {
     limit: number;
     search?: string;
 }): Promise<TasksResponse> {
+    // Get all tasks for this column and search query (without pagination)
     const searchParams = new URLSearchParams();
-
-    searchParams.append('_page', params.page.toString());
-    searchParams.append('_limit', params.limit.toString());
     searchParams.append('column', params.column);
 
-    if (params.search) {
-        // JSON Server supports full-text search with q parameter
-        searchParams.append('q', params.search);
+    if (params.search && params.search.trim()) {
+        searchParams.append('q', params.search.trim());
     }
 
     const url = `${API_BASE_URL}/tasks?${searchParams.toString()}`;
-
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -72,18 +68,25 @@ export async function fetchTasksByColumn(params: {
         );
     }
 
-    const tasks = await response.json() as Task[];
+    const allTasks = await response.json() as Task[];
+    const totalCount = allTasks.length;
 
-    // Get total count from X-Total-Count header (JSON Server provides this)
-    const totalCount = parseInt(response.headers.get('X-Total-Count') || '0', 10);
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / params.limit);
+    const hasMore = params.page < totalPages;
 
-    // Calculate if there are more pages
-    const hasMore = (params.page * params.limit) < totalCount;
+    // Apply client-side pagination to the filtered results
+    const startIndex = (params.page - 1) * params.limit;
+    const endIndex = startIndex + params.limit;
+    const paginatedTasks = allTasks.slice(startIndex, endIndex);
+
+
 
     return {
-        tasks,
+        tasks: paginatedTasks,
         total: totalCount,
-        page: params.page,
+        currentPage: params.page,
+        totalPages,
         limit: params.limit,
         hasMore
     };

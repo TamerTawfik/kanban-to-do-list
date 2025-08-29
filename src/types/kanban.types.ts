@@ -2,40 +2,8 @@
  * Core types for the Interactive Kanban Board
  */
 
-export type ColumnType = "backlog" | "in-progress" | "review" | "done";
-
-export interface Task {
-    id: number;
-    title: string;
-    description: string;
-    column: ColumnType;
-    createdAt: string;
-    updatedAt: string;
-    priority?: "low" | "medium" | "high";
-    tags?: string[];
-    assignee?: string;
-    dueDate?: string;
-}
-
-export interface TaskMutation {
-    id?: number;
-    title: string;
-    description: string;
-    column: ColumnType;
-    createdAt?: string;
-    updatedAt?: string;
-    priority?: "low" | "medium" | "high";
-    tags?: string[];
-    assignee?: string;
-    dueDate?: string;
-}
-
-export interface TasksResponse {
-    tasks: Task[];
-    total: number;
-    page: number;
-    limit: number;
-}
+// Import base types from task.types.ts
+import { ColumnType, Task } from './task.types';
 
 export interface KanbanColumnProps {
     columnId: ColumnType;
@@ -68,6 +36,8 @@ export interface SearchBarProps {
     onChange: (query: string) => void;
     placeholder?: string;
 }
+
+
 
 export interface KanbanBoardProps {
     className?: string;

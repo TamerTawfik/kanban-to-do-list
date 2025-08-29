@@ -13,6 +13,7 @@ import {
   useSetSearchQuery,
   useClearSearch,
   useOpenTaskForm,
+  useResetPaginationForSearch,
 } from "@/stores/kanbanStore";
 import { useCallback, useEffect, useState, useRef } from "react";
 
@@ -26,18 +27,27 @@ export default function SearchBar({
   const searchQuery = useSearchQuery();
   const setSearchQuery = useSetSearchQuery();
   const clearSearch = useClearSearch();
+  const resetPaginationForSearch = useResetPaginationForSearch();
   const openTaskForm = useOpenTaskForm();
   const [localValue, setLocalValue] = useState(searchQuery);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Debounce search input
+  // Debounce search input and reset pagination when search changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      setSearchQuery(localValue);
+      const trimmedValue = localValue.trim();
+      const currentQuery = searchQuery.trim();
+
+      // Only update if the search query actually changed
+      if (trimmedValue !== currentQuery) {
+        setSearchQuery(trimmedValue);
+        // Reset pagination for all columns when search changes
+        resetPaginationForSearch();
+      }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [localValue, setSearchQuery]);
+  }, [localValue, setSearchQuery, searchQuery, resetPaginationForSearch]);
 
   // Sync with store when external changes occur
   useEffect(() => {
@@ -79,7 +89,9 @@ export default function SearchBar({
   const handleClear = useCallback(() => {
     setLocalValue("");
     clearSearch();
-  }, [clearSearch]);
+    // Reset pagination when clearing search
+    resetPaginationForSearch();
+  }, [clearSearch, resetPaginationForSearch]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
