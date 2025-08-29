@@ -1,4 +1,4 @@
-import { Task, TaskMutation, ColumnType } from '@/types/task.types';
+import { Task, TaskMutation, ColumnType, TasksResponse } from '@/types/task.types';
 
 const API_BASE_URL = 'http://localhost:4000';
 
@@ -41,6 +41,52 @@ export async function fetchTasks(params?: {
 
     const response = await fetch(url);
     return handleResponse<Task[]>(response);
+}
+
+// GET /tasks - Fetch tasks by column with pagination metadata
+export async function fetchTasksByColumn(params: {
+    column: ColumnType;
+    page: number;
+    limit: number;
+    search?: string;
+}): Promise<TasksResponse> {
+    const searchParams = new URLSearchParams();
+
+    searchParams.append('_page', params.page.toString());
+    searchParams.append('_limit', params.limit.toString());
+    searchParams.append('column', params.column);
+
+    if (params.search) {
+        // JSON Server supports full-text search with q parameter
+        searchParams.append('q', params.search);
+    }
+
+    const url = `${API_BASE_URL}/tasks?${searchParams.toString()}`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new TaskApiError(
+            `API Error: ${response.status} ${response.statusText}`,
+            response.status
+        );
+    }
+
+    const tasks = await response.json() as Task[];
+
+    // Get total count from X-Total-Count header (JSON Server provides this)
+    const totalCount = parseInt(response.headers.get('X-Total-Count') || '0', 10);
+
+    // Calculate if there are more pages
+    const hasMore = (params.page * params.limit) < totalCount;
+
+    return {
+        tasks,
+        total: totalCount,
+        page: params.page,
+        limit: params.limit,
+        hasMore
+    };
 }
 
 // GET /tasks/:id - Fetch single task
