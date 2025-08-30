@@ -1,6 +1,4 @@
 .page {
-
-
   display: grid;
   grid-template-rows: 20px 1fr 20px;
   align-items: center;
