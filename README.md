@@ -1,3 +1,7 @@
+## Assessment Status
+
+**Note:** This technical assessment was not completed as the task timeline ended before resolving the json-server deployment issue with Vercel. The application works fully in development mode but requires additional configuration for production deployment.
+
 # Kanban To-Do List Dashboard
 
 A fully interactive Kanban-style task management board built with Next.js 15, React 19, and Material-UI. This application provides a visual interface for organizing tasks across different stages of completion with drag-and-drop functionality and real-time updates.
@@ -96,3 +100,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Assessment Status
+
+**Note:** This technical assessment was not completed as the task timeline ended before resolving the json-server deployment issue with Vercel. The application works fully in development mode but requires additional configuration for production deployment.
