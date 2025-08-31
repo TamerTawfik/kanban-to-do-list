@@ -1,10 +1,6 @@
-## Assessment Status
-
-**Note:** This technical assessment was not completed as the task timeline ended before resolving the json-server deployment issue with Vercel. The application works fully in development mode but requires additional configuration for production deployment.
-
 # Kanban To-Do List Dashboard
 
-A fully interactive Kanban-style task management board built with Next.js 15, React 19, and Material-UI. This application provides a visual interface for organizing tasks across different stages of completion with drag-and-drop functionality and real-time updates.
+A fully interactive Kanban-style task management board built with Next.js 15, React 19, and Material-UI. This application provides a visual interface for organizing tasks across different stages of completion with drag-and-drop functionality and persistent local storage.
 
 ## Features
 
@@ -25,7 +21,7 @@ Build a fully interactive Kanban-style board with the following features:
 - **Zustand** for client-side state management
 - **TanStack React Query v5** for server state and caching
 - **@dnd-kit** for drag-and-drop functionality
-- **JSON Server** for local API development
+- **Local Storage** for data persistence (with initial data from external API)
 
 ## Project Setup
 
@@ -44,24 +40,26 @@ Build a fully interactive Kanban-style board with the following features:
 
 ### Development
 
-Start the development server with JSON server:
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-This will start:
+This will start the Next.js development server on [http://localhost:3000](http://localhost:3000).
 
-- Next.js development server on [http://localhost:3000](http://localhost:3000)
-- JSON Server API on [http://localhost:4000](http://localhost:4000)
+The application will automatically:
+
+- Load initial task data from the external API on first visit
+- Store all data locally using browser localStorage
+- Work offline after the initial data load
 
 ### Available Scripts
 
 ```bash
-npm run dev          # Start development server with JSON server
-npm run json-server  # Run only the JSON server (port 4000)
+npm run dev          # Start development server
 npm run build        # Build for production with Turbopack
-npm run start        # Start production server with JSON server
+npm run start        # Start production server
 npm run lint         # Run ESLint checks
 ```
 
@@ -95,12 +93,27 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Data Management
+
+The application uses a hybrid approach for data management:
+
+1. **Initial Load**: Fetches task data from `https://my-json-server.typicode.com/TamerTawfik/json/tasks`
+2. **Local Storage**: All CRUD operations are performed locally using browser localStorage
+3. **Persistence**: Data persists across browser sessions
+4. **Offline Support**: Works completely offline after initial data load
+
+### Data Reset
+
+To reset the application data and re-fetch from the API:
+
+```javascript
+// In browser console
+import { resetData } from "./src/services/taskApi";
+await resetData();
+```
+
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The application is now ready for deployment without any external dependencies. Simply deploy to [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) or any other hosting platform.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Assessment Status
-
-**Note:** This technical assessment was not completed as the task timeline ended before resolving the json-server deployment issue with Vercel. The application works fully in development mode but requires additional configuration for production deployment.
+Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
